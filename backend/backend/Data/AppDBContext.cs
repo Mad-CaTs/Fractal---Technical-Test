@@ -5,7 +5,7 @@ namespace backend.Data
 {
     public class AppDBContext : DbContext
     {
-        public AppDBContext(DbContextOptions<AppDBContext> options)
+        public AppDBContext(DbContextOptions options) : base(options)
         {
         }
 
@@ -51,8 +51,7 @@ namespace backend.Data
                       .HasForeignKey(od => od.productId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                entity.Property(od => od.unitPrice).HasPrecision(18, 2);
-                entity.Property(od => od.totalPrice).HasPrecision(18, 2);
+                entity.Property(od => od.unitPrice).HasPrecision(18, 2);              
             });
         }
     }

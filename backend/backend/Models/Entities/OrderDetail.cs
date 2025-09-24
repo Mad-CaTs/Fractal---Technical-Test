@@ -22,6 +22,7 @@ namespace backend.Models.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal unitPrice { get; set; }
 
+        [NotMapped]
         [Column(TypeName = "decimal(18,2)")]
         public decimal totalPrice => quantity * unitPrice;
 
