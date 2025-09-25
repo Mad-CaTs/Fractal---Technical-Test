@@ -46,13 +46,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); //
 
 // CORS
 app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
-
 app.MapControllers();
 
 // Auto-migrate database
