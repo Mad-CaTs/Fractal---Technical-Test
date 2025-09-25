@@ -27,7 +27,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", builder =>
     {
-        builder.WithOrigins("http://localhost:3000", "https://fractal-test-reactjs.netlify.app/")
+        builder.WithOrigins("http://localhost:3000", "https://fractal-test-reactjs.netlify.app")
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
