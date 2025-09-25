@@ -15,7 +15,6 @@ namespace backend.Models.DTOs
 
     public class CreateOrderDto
     {
-        public string orderNumber { get; set; } = string.Empty;
         public List<CreateOrderDetailDto> orderDetails { get; set; } = new List<CreateOrderDetailDto>();
     }
 

@@ -1,4 +1,7 @@
 using backend.Data;
+using backend.Repositories;
+using backend.Repositories.Interfaces;
+using backend.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +13,14 @@ builder.Services.AddDbContext<AppDBContext>(options =>
 
 // AutoMapper 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// Dependency Injection - Repositories
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// Dependency Injection - Services
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 // CORS Config
 builder.Services.AddCors(options =>
