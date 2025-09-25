@@ -25,11 +25,11 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 // CORS Config
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp", builder =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        builder.WithOrigins("http://localhost:3000", "https://fractal-test-reactjs.netlify.app")
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.WithOrigins("https://fractal-test-reactjs.netlify.app")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
@@ -42,10 +42,10 @@ var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseHttpsRedirection(); 
+app.UseHttpsRedirection();
 
 // CORS
-app.UseCors("AllowReactApp");
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 app.MapControllers();
