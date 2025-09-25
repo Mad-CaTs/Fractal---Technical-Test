@@ -55,4 +55,13 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+// Auto-migrate database
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDBContext>();
+    context.Database.EnsureCreated();
+}
+
+// Configurar puerto para Railway
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Run($"http://0.0.0.0:{port}");

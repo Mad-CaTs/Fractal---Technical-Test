@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API = axios.create(
     { 
-        baseURL: "https://localhost:7067/api", 
+        baseURL: "https://fractal-technical-test-production.up.railway.app/api", 
         headers: { "Content-Type": "application/json" },    
     });
 
