@@ -70,7 +70,6 @@ namespace backend.Services
             if (existingOrder.status == OrderStatus.Completed)
                 return null;
 
-            existingOrder.orderNumber = updateOrderDto.orderNumber;
             existingOrder.status = updateOrderDto.status;
             existingOrder.orderDetails.Clear();
 
