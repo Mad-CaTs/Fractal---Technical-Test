@@ -1,38 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { productService } from '../services/productService';
 
 const Products = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    // Estados para modals
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
-    // Estados para formularios
-    const [formData, setFormData] = useState({
-        name: '',
-        unitPrice: 0
-    });
+    const [formData, setFormData] = useState({ name: '', unitPrice: 0 });
     const [editingProduct, setEditingProduct] = useState(null);
     const [productToDelete, setProductToDelete] = useState(null);
 
-    // Cargar productos al iniciar componente
     useEffect(() => {
         loadProducts();
     }, []);
 
     const loadProducts = async () => {
         try {
-        setLoading(true);
-        const productsData = await productService.getAll();
-        setProducts(productsData);
+            setLoading(true);
+            const productsData = await productService.getAll();
+            setProducts(productsData);
         } catch (err) {
-        setError('Error al cargar productos');
+            toast.error('Error loading products');
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -40,7 +32,6 @@ const Products = () => {
         setFormData({ name: '', unitPrice: 0 });
     };
 
-    // Manejar creación
     const handleAddClick = () => {
         resetForm();
         setShowAddModal(true);
@@ -48,60 +39,58 @@ const Products = () => {
 
     const handleCreateProduct = async () => {
         try {
-        if (!formData.name.trim() || formData.unitPrice <= 0) {
-            setError('Nombre y precio son requeridos');
-            return;
-        }
+            if (!formData.name.trim() || formData.unitPrice <= 0) {
+                toast.warning('Name and price are required');
+                return;
+            }
 
-        await productService.create({
-            name: formData.name.trim(),
-            unitPrice: parseFloat(formData.unitPrice)
-        });
+            await productService.create({
+                name: formData.name.trim(),
+                unitPrice: parseFloat(formData.unitPrice)
+            });
 
-        await loadProducts();
-        setShowAddModal(false);
-        resetForm();
-        setError(null);
+            await loadProducts();
+            setShowAddModal(false);
+            resetForm();
+            toast.success('Product created successfully');
         } catch (err) {
-        setError('Error al crear producto');
+            toast.error('Error creating product');
         }
     };
 
-    // Manejar edición
     const handleEditClick = (product) => {
         setEditingProduct(product);
         setFormData({
-        name: product.name,
-        unitPrice: product.unitPrice,
-        isActive: product.isActive
+            name: product.name,
+            unitPrice: product.unitPrice,
+            isActive: product.isActive
         });
         setShowEditModal(true);
     };
 
     const handleUpdateProduct = async () => {
         try {
-        if (!formData.name.trim() || formData.unitPrice <= 0) {
-            setError('Nombre y precio son requeridos');
-            return;
-        }
+            if (!formData.name.trim() || formData.unitPrice <= 0) {
+                toast.warning('Name and price are required');
+                return;
+            }
 
-        await productService.update(editingProduct.id, {
-            name: formData.name.trim(),
-            unitPrice: parseFloat(formData.unitPrice),
-            isActive: formData.isActive
-        });
+            await productService.update(editingProduct.id, {
+                name: formData.name.trim(),
+                unitPrice: parseFloat(formData.unitPrice),
+                isActive: formData.isActive
+            });
 
-        await loadProducts();
-        setShowEditModal(false);
-        setEditingProduct(null);
-        resetForm();
-        setError(null);
+            await loadProducts();
+            setShowEditModal(false);
+            setEditingProduct(null);
+            resetForm();
+            toast.success('Product updated successfully');
         } catch (err) {
-        setError('Error al actualizar producto');
+            toast.error('Error updating product');
         }
     };
 
-    // Manejar eliminación
     const handleDeleteClick = (product) => {
         setProductToDelete(product);
         setShowDeleteModal(true);
@@ -109,12 +98,13 @@ const Products = () => {
 
     const handleDeleteConfirm = async () => {
         try {
-        await productService.delete(productToDelete.id);
-        await loadProducts();
-        setShowDeleteModal(false);
-        setProductToDelete(null);
+            await productService.delete(productToDelete.id);
+            await loadProducts();
+            setShowDeleteModal(false);
+            setProductToDelete(null);
+            toast.success('Product inactivated successfully');
         } catch (err) {
-        setError('Error al eliminar producto');
+            toast.error('Error inactivating product');
         }
     };
 
@@ -123,245 +113,191 @@ const Products = () => {
         setProductToDelete(null);
     };
 
-    if (loading) return <div className="text-center py-8">Cargando productos...</div>;
+    if (loading) return (
+        <div className="text-center py-8">
+            <div className="loading"></div>
+            <p style={{ color: '#2C3E50', marginTop: '1rem' }}>Loading products...</p>
+        </div>
+    );
 
     return (
-    <div>
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-            <button
-            onClick={handleAddClick}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-            Add New Product
-            </button>
+        <div>
+            <div className="page-header">
+                <h1 className="page-title">Products</h1>
+                <button onClick={handleAddClick} className="btn btn-primary">
+                    + Add New Product
+                </button>
+            </div>
+
+            <div className="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Unit Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {products.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="text-center text-gray-500">
+                                    No products available
+                                </td>
+                            </tr>
+                        ) : (
+                            products.map((product) => (
+                                <tr key={product.id}>
+                                    <td>{product.id}</td>
+                                    <td className="font-semibold">{product.name}</td>
+                                    <td className="font-semibold">${product.unitPrice.toFixed(2)}</td>
+                                    <td>
+                                        <span className={`badge ${product.isActive ? 'badge-active' : 'badge-inactive'}`}>
+                                            {product.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="flex space-x-3">
+                                            <button
+                                                onClick={() => handleEditClick(product)}
+                                                className="action-btn action-btn-edit"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(product)}
+                                                className="action-btn action-btn-delete"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Modal de agregacion */}
+            {showAddModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Product</h3>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Product Name</label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                className="form-input"
+                                placeholder="Enter product name"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Unit Price</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={formData.unitPrice}
+                                onChange={(e) => setFormData(prev => ({ ...prev, unitPrice: e.target.value }))}
+                                className="form-input"
+                                placeholder="0.00"
+                            />
+                        </div>
+
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={() => setShowAddModal(false)} className="btn btn-secondary">
+                                Cancel
+                            </button>
+                            <button onClick={handleCreateProduct} className="btn btn-success">
+                                Create Product
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de edicion */}
+            {showEditModal && editingProduct && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                            Edit Product: {editingProduct.name}
+                        </h3>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Product Name</label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                className="form-input"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Unit Price</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={formData.unitPrice}
+                                onChange={(e) => setFormData(prev => ({ ...prev, unitPrice: e.target.value }))}
+                                className="form-input"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Status</label>
+                            <select
+                                value={formData.isActive}
+                                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
+                                className="form-select"
+                            >
+                                <option value={true}>Active</option>
+                                <option value={false}>Inactive</option>
+                            </select>
+                        </div>
+
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={() => setShowEditModal(false)} className="btn btn-secondary">
+                                Cancel
+                            </button>
+                            <button onClick={handleUpdateProduct} className="btn btn-primary">
+                                Update Product
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de eliminacion */}
+            {showDeleteModal && productToDelete && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Delete Product</h3>
+                        <p className="text-sm text-gray-500 mb-6">
+                            Are you sure you want to delete "{productToDelete.name}"?
+                        </p>
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={handleDeleteCancel} className="btn btn-secondary">
+                                Cancel
+                            </button>
+                            <button onClick={handleDeleteConfirm} className="btn btn-danger">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-
-        {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-            </div>
-        )}
-
-        {/* Tabla de productos */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-                <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Unit Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Options
-                </th>
-                </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-                {products.length === 0 ? (
-                <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    No hay productos disponibles
-                    </td>
-                </tr>
-                ) : (
-                products.map((product) => (
-                    <tr key={product.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${product.unitPrice.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                        product.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                        {product.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                        onClick={() => handleEditClick(product)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                        >
-                        Edit
-                        </button>
-                        <button
-                        onClick={() => handleDeleteClick(product)}
-                        className="text-red-600 hover:text-red-900"
-                        >
-                        Delete
-                        </button>
-                    </td>
-                    </tr>
-                ))
-                )}
-            </tbody>
-            </table>
-        </div>
-
-        {/* Modal para agregar producto */}
-        {showAddModal && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md mx-auto">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Product</h3>
-                
-                <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Name
-                </label>
-                <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter product name"
-                />
-                </div>
-
-                <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Unit Price
-                </label>
-                <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.unitPrice}
-                    onChange={(e) => setFormData(prev => ({ ...prev, unitPrice: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                />
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                <button
-                    onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={handleCreateProduct}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                    Create Product
-                </button>
-                </div>
-            </div>
-            </div>
-        )}
-
-        {/* Modal para editar producto */}
-        {showEditModal && editingProduct && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md mx-auto">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Edit Product: {editingProduct.name}
-                </h3>
-                
-                <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Name
-                </label>
-                <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                </div>
-
-                <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Unit Price
-                </label>
-                <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.unitPrice}
-                    onChange={(e) => setFormData(prev => ({ ...prev, unitPrice: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                </div>
-
-                <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
-                </label>
-                <select
-                    value={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value={true}>Active</option>
-                    <option value={false}>Inactive</option>
-                </select>
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                <button
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={handleUpdateProduct}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                    Update Product
-                </button>
-                </div>
-            </div>
-            </div>
-        )}
-
-        {/* Modal de confirmación de eliminación */}
-        {showDeleteModal && productToDelete && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm mx-auto">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Delete Product
-                </h3>
-                <p className="text-sm text-gray-500 mb-6">
-                Are you sure you want to delete "{productToDelete.name}"? This action cannot be undone.
-                </p>
-                <div className="flex justify-end space-x-3">
-                <button
-                    onClick={handleDeleteCancel}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={handleDeleteConfirm}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-                >
-                    Delete
-                </button>
-                </div>
-            </div>
-            </div>
-        )}
-    </div>
-  );
+    );
 };
 
 export default Products;

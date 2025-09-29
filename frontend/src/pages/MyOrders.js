@@ -1,31 +1,30 @@
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { orderService } from '../services/orderService';
 
 const MyOrders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState(null);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [orderToChangeStatus, setOrderToChangeStatus] = useState(null);
     const [newStatus, setNewStatus] = useState(0);
 
-    // Cargar ordenes al iniciar
     useEffect(() => {
         loadOrders();
     }, []);
 
     const loadOrders = async () => {
-        try{
+        try {
             setLoading(true);
             const ordersData = await orderService.getAll();
             setOrders(ordersData);
-        }catch(error){
-            setError("Error al cargar las ordenes.");
+        } catch (error) {
+            toast.error("Error loading orders");
             console.error(error);
-        }finally{
+        } finally {
             setLoading(false);
         }
     };
@@ -36,13 +35,22 @@ const MyOrders = () => {
     };
 
     const handleDeleteConfirm = async () => {
-        try{
+        try {
             await orderService.delete(orderToDelete.id);
             await loadOrders();
             setShowDeleteModal(false);
-            setOrderToDelete(null);        
-        }catch(error){
-            setError("Error al eliminar la orden.");
+            setOrderToDelete(null);
+            toast.success("Order deleted successfully");
+        } catch (error) {
+            setShowDeleteModal(false);
+            setOrderToDelete(null);
+
+            if(error.message === 'Cannot delete completed order') {
+                toast.error("Cannot delete completed order");
+                return;
+            } else {
+                toast.error("Error deleting order");
+            }
             console.error(error);
         }
     };
@@ -61,11 +69,12 @@ const MyOrders = () => {
     const handleChangeStatusConfirm = async () => {
         try {
             await orderService.updateStatus(orderToChangeStatus.id, newStatus);
-            await loadOrders(); 
+            await loadOrders();
             setShowStatusModal(false);
             setOrderToChangeStatus(null);
+            toast.success("Order status updated successfully");
         } catch (err) {
-            setError('Error al cambiar el estado de la orden');
+            toast.error("Error updating order status");
             console.error(err);
         }
     };
@@ -75,209 +84,151 @@ const MyOrders = () => {
         setOrderToChangeStatus(null);
     };
 
-    const getStatusText = (status) => {
-        const statusMap = {
-            0: 'Pending',
-            1: 'In Progress', 
-            2: 'Completed'
-        };
-        return statusMap[status] || 'Unknown';
-    };
-
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString();
     };
 
     const getStatusBadge = (status) => {
         const statusConfig = {
-            0: {text: 'Pending', class: 'bg-yellow-100 text-yellow-800'},
-            1: { text: 'In Progress', class: 'bg-blue-100 text-blue-800' },
-            2: { text: 'Completed', class: 'bg-green-100 text-green-800' },
+            0: { text: 'Pending', class: 'badge-pending' },
+            1: { text: 'In Progress', class: 'badge-progress' },
+            2: { text: 'Completed', class: 'badge-completed' },
         };
-
-        const config = statusConfig[status] || { text: 'Unknown', class: 'bg-gray-100 text-gray-800' };
-
-        return (
-            <span className={`px-2 py-1 text-xs rounded-full ${config.class}`}>
-                {config.text}
-            </span>
-        );       
+        const config = statusConfig[status] || { text: 'Unknown', class: 'badge' };
+        return <span className={`badge ${config.class}`}>{config.text}</span>;
     };
 
-    if(loading) return <div className="text-center py-8">Cargando órdenes...</div>;
-    if(error) return <div className="text-center py-8 text-red-600">{error}</div>;
+
+    if (loading) return (
+        <div className="text-center py-8">
+            <div className="loading"></div>
+            <p style={{ color: '#2C3E50', marginTop: '1rem' }}>Loading orders...</p>
+        </div>
+    );
 
     return (
-    <div>
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
-        <Link
-          to="/add-order"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          Add New Order
-        </Link>
-        </div>
+        <div>
+            <div className="page-header">
+                <h1 className="page-title">My Orders</h1>
+                <Link to="/add-order" className="btn btn-primary">
+                    + Add New Order
+                </Link>
+            </div>
 
-        {/* Tabla de órdenes */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            ID
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Order #
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            # Products
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Final Price
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Options
-                        </th>
-                    </tr>
-                </thead>
-
-                <tbody className="bg-white divide-y divide-gray-200">
-                    {orders.length === 0 ? (
+            <div className="table-container">
+                <table>
+                    <thead>
                         <tr>
-                            <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                                No hay ordenes disponibles.
-                            </td>
+                            <th>ID</th>
+                            <th>Order #</th>
+                            <th>Date</th>
+                            <th># Products</th>
+                            <th>Final Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
                         </tr>
-                    ) : (
-                        orders.map((order) => (
-                            <tr key={order.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {order.id}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {order.orderNumber}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {formatDate(order.orderDate)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {order.totalProducts}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    ${order.finalPrice.toFixed(2)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    {getStatusBadge(order.status)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <Link
-                                    to={`/add-order/${order.id}`}
-                                    className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                    >
-                                    Edit
-                                    </Link>
-                                    <button
-                                        onClick={() => handleChangeStatusClick(order)}
-                                        className="text-blue-600 hover:text-blue-900 mr-4"
-                                    >
-                                        Change Status
-                                    </button>
-                                    <button
-                                    onClick={() => handleDeleteClick(order)}
-                                    className="text-red-600 hover:text-red-900"
-                                    >
-                                    Delete
-                                    </button>
+                    </thead>
+                    <tbody>
+                        {orders.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="text-center text-gray-500">
+                                    No orders available
                                 </td>
                             </tr>
-                        ))
-                    )}
+                        ) : (
+                            orders.map((order) => (
+                                <tr key={order.id}>
+                                    <td>{order.id}</td>
+                                    <td className="font-semibold">{order.orderNumber}</td>
+                                    <td>{formatDate(order.orderDate)}</td>
+                                    <td>{order.totalProducts}</td>
+                                    <td className="font-semibold">${order.finalPrice.toFixed(2)}</td>
+                                    <td>{getStatusBadge(order.status)}</td>
+                                    <td>
+                                        <div className="flex space-x-3">
+                                            <Link
+                                                to={`/add-order/${order.id}`}
+                                                className="action-btn action-btn-edit"
+                                            >
+                                                Edit
+                                            </Link>
+                                            <button
+                                                onClick={() => handleChangeStatusClick(order)}
+                                                className="action-btn action-btn-status"
+                                            >
+                                                Status
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(order)}
+                                                className="action-btn action-btn-delete"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
-            </table>
-        </div>
+                </table>
+            </div>
 
-        {/* Modal de confirmación de eliminación */}
-        {showDeleteModal && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm mx-auto">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Confirm Delete
-                </h3>
-                <p className="text-sm text-gray-500 mb-6">
-                Are you sure you want to delete order "{orderToDelete?.orderNumber}"? 
-                This action cannot be undone.
-                </p>
-                <div className="flex justify-end space-x-3">
-                <button
-                    onClick={handleDeleteCancel}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={handleDeleteConfirm}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-                >
-                    Delete
-                </button>
+            {/* Modal de eliminacion */}
+            {showDeleteModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                            Confirm Delete
+                        </h3>
+                        <p className="text-sm text-gray-500 mb-6">
+                            Are you sure you want to delete order "{orderToDelete?.orderNumber}"?
+                        </p>
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={handleDeleteCancel} className="btn btn-secondary">
+                                Cancel
+                            </button>
+                            <button onClick={handleDeleteConfirm} className="btn btn-danger">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            </div>
-        )}
+            )}
 
-        {/* Modal para cambiar estado */}
-        {showStatusModal && orderToChangeStatus && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md mx-auto">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Change Order Status
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-                Change status for order: {orderToChangeStatus.orderNumber}
-            </p>
-            
-            <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                New Status
-                </label>
-                <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                <option value={0}>Pending</option>
-                <option value={1}>In Progress</option>
-                <option value={2}>Completed</option>
-                </select>
-            </div>
-
-            <div className="flex justify-end space-x-3">
-                <button
-                onClick={handleChangeStatusCancel}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                Cancel
-                </button>
-                <button
-                onClick={handleChangeStatusConfirm}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                Change Status
-                </button>
-            </div>
-            </div>
+            {/* Modal de estado */}
+            {showStatusModal && orderToChangeStatus && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                            Change Order Status
+                        </h3>
+                        <p className="text-sm text-gray-500 mb-4">
+                            Order: {orderToChangeStatus.orderNumber}
+                        </p>
+                        <div className="form-group">
+                            <label className="form-label">New Status</label>
+                            <select
+                                value={newStatus}
+                                onChange={(e) => setNewStatus(parseInt(e.target.value))}
+                                className="form-select"
+                            >
+                                <option value={0}>Pending</option>
+                                <option value={1}>In Progress</option>
+                                <option value={2}>Completed</option>
+                            </select>
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={handleChangeStatusCancel} className="btn btn-secondary">
+                                Cancel
+                            </button>
+                            <button onClick={handleChangeStatusConfirm} className="btn btn-primary">
+                                Update Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-        )}
-        
-    </div>
     );
 };
 

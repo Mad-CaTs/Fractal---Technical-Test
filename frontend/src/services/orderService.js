@@ -27,12 +27,19 @@ export const orderService = {
 
     // Eliminar orden
     delete: async (id) => {
-        await API.delete(`/Orders/${id}`);
-        return true;
+        try {
+            await API.delete(`/Orders/${id}`);
+            return { success: true };
+        } catch (error) {
+            if (error.response?.status === 400 || error.response?.status === 404) {
+                throw new Error('Cannot delete completed order');
+            }
+            throw new Error('Failed to delete order');
+        }
     },
 
     // Cambiar estado de orden
-    updateStatus: async (id, status) => {
+    updateStatus: async (id, status) => {   
         const response = await API.patch(`/Orders/${id}/status`, status, {
         headers: { 'Content-Type': 'application/json' }
         });
